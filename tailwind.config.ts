@@ -58,6 +58,10 @@ const config: Config = {
   		}
   	}
   },
+<<<<<<< HEAD
   plugins: [require('@tailwindcss/forms')],
+=======
+  plugins: [require("tailwindcss-animate")],
+>>>>>>> 8a443ede1307b57c86b31cab95ec2d39c58f0271
 };
 export default config;
