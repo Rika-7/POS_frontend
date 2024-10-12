@@ -1,7 +1,7 @@
 import React from "react";
 
 const cart = () => {
-  return <div>カート</div>;
+  return <div>ここでかえられるよ</div>;
 };
 
 export default cart;

@@ -27,7 +27,7 @@ export default function Home() {
       </NavigationMenu>
       <div>
         <h1>Home</h1>
-        <p>Welcome to the POS app home page!</p>
+        <p>こんにちは！</p>
       </div>
     </div>
   );
