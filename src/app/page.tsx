@@ -9,6 +9,8 @@ import {
   NavigationMenuViewport,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 
 export default function Home() {
@@ -26,7 +28,8 @@ export default function Home() {
         </NavigationMenuList>
       </NavigationMenu>
       <div>
-        <h1>Home</h1>
+        <Button className={buttonVariants({ variant: "outline" })}>追加</Button>
+        <Button>追加</Button>
         <p>こんにちは！</p>
         <p>Welcome to the POS app home page!</p>
       </div>
