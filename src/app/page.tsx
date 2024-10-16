@@ -10,8 +10,9 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
+import { FC } from "react";
 
-export default function Home() {
+const Home: FC = () => {
   return (
     <div>
       <NavigationMenu>
@@ -27,12 +28,11 @@ export default function Home() {
       </NavigationMenu>
       <div>
         <h1>Home</h1>
-<<<<<<< HEAD
         <p>こんにちは！</p>
-=======
         <p>Welcome to the POS app home page!</p>
->>>>>>> 8a443ede1307b57c86b31cab95ec2d39c58f0271
       </div>
     </div>
   );
-}
+};
+
+export default Home;
