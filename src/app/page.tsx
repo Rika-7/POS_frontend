@@ -10,9 +10,8 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
-import { FC } from "react";
 
-const Home: FC = () => {
+export default function Home() {
   return (
     <div>
       <NavigationMenu>
@@ -33,6 +32,4 @@ const Home: FC = () => {
       </div>
     </div>
   );
-};
-
-export default Home;
+}
