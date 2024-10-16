@@ -20,10 +20,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-<<<<<<< HEAD
     "@tailwindcss/forms": "^0.5.9",
-=======
->>>>>>> 8a443ede1307b57c86b31cab95ec2d39c58f0271
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
