@@ -29,7 +29,6 @@ export default function Home() {
       </NavigationMenu>
       <div>
         <Button className={buttonVariants({ variant: "outline" })}>追加</Button>
-        <Button>追加</Button>
         <p>こんにちは！</p>
         <p>Welcome to the POS app home page!</p>
       </div>
