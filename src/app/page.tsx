@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 interface PurchaseItem {
@@ -30,12 +30,18 @@ export default function Home() {
   const [productPrice, setProductPrice] = useState<string>("");
   const [purchaseList, setPurchaseList] = useState<PurchaseItem[]>([]);
 
-  const handleReadProduct = async (): Promise<void> => {
-    // ここで商品コードをバックエンドに送信し、商品情報を取得する処理を実装します
-    // 仮の実装として、ハードコードした商品情報を返します
+  useEffect(() => {
+    // クライアントサイドのみで処理を行う
     setProductName("おーいお茶");
     setProductPrice("150");
-  };
+  }, []);
+
+  // const handleReadProduct = async (): Promise<void> => {
+  //   // ここで商品コードをバックエンドに送信し、商品情報を取得する処理を実装します
+  //   // 仮の実装として、ハードコードした商品情報を返します
+  //   setProductName("おーいお茶");
+  //   setProductPrice("150");
+  // };
 
   const handleAddProduct = (): void => {
     if (productName && productPrice) {
@@ -83,7 +89,7 @@ export default function Home() {
             placeholder="商品コード"
             className="mb-2"
           />
-          <Button onClick={handleReadProduct}>読み込み</Button>
+          <Button onClick={() => setProductName("おーいお茶")}>読み込み</Button>
         </div>
         <div className="mb-4">
           <Input
