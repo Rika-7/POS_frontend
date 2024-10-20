@@ -34,9 +34,14 @@ jobs:
       - name: Copy artifact for deployment job
         run: |
           mkdir deploy
-          cp -r .next/standalone/. ./deploy
-          cp -r public ./deploy
+          if [ -d "./public" ]; then 
+            echo "Public directory found. Proceeding to copy."; 
+            cp -r public ./deploy; 
+          else 
+            echo "Public directory not found at the root level. Aborting copy."; 
+          fi
           mkdir -p ./deploy/.next/static
+          cp -r .next/standalone/. ./deploy
           cp -r .next/static/. ./deploy/.next/static
 
       - name: Zip artifact for deployment
