@@ -51,8 +51,12 @@ export default function Home() {
         setProductName("");
         setProductPrice("");
       }
-    } catch (error) {
-      alert("商品情報の取得に失敗しました");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert(`商品情報の取得に失敗しました: ${error.message}`);
+      } else {
+        alert("商品情報の取得に失敗しました: 不明なエラーが発生しました");
+      }
     }
   };
 
@@ -85,8 +89,12 @@ export default function Home() {
       } else {
         alert("購入処理に失敗しました");
       }
-    } catch (error) {
-      alert("購入処理に失敗しました");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert(`購入処理に失敗しました: ${error.message}`);
+      } else {
+        alert("購入処理に失敗しました: 不明なエラーが発生しました");
+      }
     }
   };
 
@@ -113,7 +121,9 @@ export default function Home() {
             placeholder="商品コード"
             className="mb-2 w-full sm:w-1/2"
           />
-          <Button className="w-full sm:w-1/2" onClick={handleReadProduct}>読み込み</Button>
+          <Button className="w-full sm:w-1/2" onClick={handleReadProduct}>
+            読み込み
+          </Button>
         </div>
         <div className="mb-4 flex flex-col items-center">
           <Input
@@ -130,7 +140,9 @@ export default function Home() {
             placeholder="単価"
             className="mb-2 w-full sm:w-1/2"
           />
-          <Button className="w-full sm:w-1/2" onClick={handleAddProduct}>追加</Button>
+          <Button className="w-full sm:w-1/2" onClick={handleAddProduct}>
+            追加
+          </Button>
         </div>
         <div className="mb-4">
           <h2 className="text-xl font-bold mb-2 text-center">購入リスト</h2>
@@ -144,7 +156,9 @@ export default function Home() {
         </div>
         <div className="flex justify-center">
           <Button
-            className={`w-full sm:w-1/2 ${buttonVariants({ variant: "outline" })}`}
+            className={`w-full sm:w-1/2 ${buttonVariants({
+              variant: "outline",
+            })}`}
             onClick={handlePurchase}
           >
             購入
