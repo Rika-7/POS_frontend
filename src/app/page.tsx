@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import axios from "axios";
 
@@ -26,6 +26,19 @@ export default function Home() {
   const [productName, setProductName] = useState<string>("");
   const [productPrice, setProductPrice] = useState<string>("");
   const [purchaseList, setPurchaseList] = useState<PurchaseItem[]>([]);
+
+  // useEffect(() => {
+  //   // クライアントサイドのみで処理を行う
+  //   setProductName("おーいお茶");
+  //   setProductPrice("150");
+  // }, []);
+
+  // const handleReadProduct = async (): Promise<void> => {
+  //   // ここで商品コードをバックエンドに送信し、商品情報を取得する処理を実装します
+  //   // 仮の実装として、ハードコードした商品情報を返します
+  //   setProductName("おーいお茶");
+  //   setProductPrice("150");
+  // };
 
   const handleReadProduct = async (): Promise<void> => {
     try {
