@@ -21,6 +21,18 @@ interface PurchaseItem {
   total: number;
 }
 
+interface ItemResponse {
+  id?: number;
+  name?: string;
+  price?: number;
+  message?: string;
+}
+
+interface OrderResponse {
+  message?: string;
+  order_id?: number;
+}
+
 export default function Home() {
   const [productCode, setProductCode] = useState<string>("");
   const [productName, setProductName] = useState<string>("");
@@ -42,10 +54,12 @@ export default function Home() {
 
   const handleReadProduct = async (): Promise<void> => {
     try {
-      const response = await axios.get(`/api/products/${productCode}`);
-      if (response.data) {
+      const response = await axios.get<ItemResponse>(
+        `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/items?code=${productCode}`
+      );
+      if (response.data && response.data.name) {
         setProductName(response.data.name);
-        setProductPrice(response.data.price.toString());
+        setProductPrice(response.data.price?.toString() || "");
       } else {
         alert("商品がマスタ未登録です");
         setProductName("");
@@ -82,8 +96,11 @@ export default function Home() {
         items: purchaseList,
         total,
       };
-      const response = await axios.post("/api/purchase", purchaseData);
-      if (response.data.success) {
+      const response = await axios.post<OrderResponse>(
+        `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/orders`,
+        purchaseData
+      );
+      if (response.data && response.data.message) {
         alert(`合計金額: ${total}円`);
         setPurchaseList([]);
       } else {
