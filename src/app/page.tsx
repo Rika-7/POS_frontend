@@ -62,7 +62,7 @@ export default function Home() {
     if (!productCode) {
       alert("商品コードを入力してください。");
       return;
-    }
+    if (data) {
     const data = await handleApiCall(
       `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/product?code=${productCode}`,
       "GET"
