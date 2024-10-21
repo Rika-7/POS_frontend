@@ -28,6 +28,12 @@ interface ItemResponse {
   message?: string;
 }
 
+interface ProductCreateResponse {
+  id?: number;
+  name?: string;
+  price?: number;
+}
+
 interface OrderResponse {
   message?: string;
   order_id?: number;
@@ -38,43 +44,60 @@ export default function Home() {
   const [productName, setProductName] = useState<string>("");
   const [productPrice, setProductPrice] = useState<string>("");
   const [purchaseList, setPurchaseList] = useState<PurchaseItem[]>([]);
+  const [isProductNotFound, setIsProductNotFound] = useState<boolean>(false);
 
-  // useEffect(() => {
-  //   // クライアントサイドのみで処理を行う
-  //   setProductName("おーいお茶");
-  //   setProductPrice("150");
-  // }, []);
-
-  // const handleReadProduct = async (): Promise<void> => {
-  //   // ここで商品コードをバックエンドに送信し、商品情報を取得する処理を実装します
-  //   // 仮の実装として、ハードコードした商品情報を返します
-  //   setProductName("おーいお茶");
-  //   setProductPrice("150");
-  // };
-
-  const handleReadProduct = async (): Promise<void> => {
+  const handleProductFetch = async (): Promise<void> => {
+    if (!productCode) {
+      alert("商品コードを入力してください。");
+      return;
+    }
     try {
       const response = await axios.get<ItemResponse>(
-        `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/items?code=${productCode}`
+        `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/product?code=${productCode}`
       );
       if (response.data && response.data.name) {
         setProductName(response.data.name);
         setProductPrice(response.data.price?.toString() || "");
-      } else {
+        setIsProductNotFound(false);
+      }
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
         alert("商品がマスタ未登録です");
         setProductName("");
         setProductPrice("");
-      }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        alert(`商品情報の取得に失敗しました: ${error.message}`);
+        setIsProductNotFound(true);
       } else {
-        alert("商品情報の取得に失敗しました: 不明なエラーが発生しました");
+        alert("商品情報の取得に失敗しました");
       }
     }
   };
 
-  const handleAddProduct = (): void => {
+  const handleProductRegister = async (): Promise<void> => {
+    if (!productCode || !productName || !productPrice) {
+      alert("商品コード、名前、および価格を入力してください。");
+      return;
+    }
+    try {
+      const response = await axios.post<ProductCreateResponse>(
+        `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/create_product/`,
+        {
+          code: productCode,
+          name: productName,
+          price: parseInt(productPrice),
+        }
+      );
+      if (response.data && response.data.name) {
+        alert(`商品「${response.data.name}」が新しく登録されました。`);
+        setIsProductNotFound(false);
+      } else {
+        alert("商品をデータベースに保存できませんでした");
+      }
+    } catch (error: unknown) {
+      alert("商品保存に失敗しました");
+    }
+  };
+
+  const handleAddToCart = (): void => {
     if (productName && productPrice) {
       const newItem: PurchaseItem = {
         name: productName,
@@ -83,9 +106,8 @@ export default function Home() {
         total: parseInt(productPrice),
       };
       setPurchaseList([...purchaseList, newItem]);
-      setProductCode("");
-      setProductName("");
-      setProductPrice("");
+      alert(`商品「${productName}」が購入リストに追加されました。`);
+      resetFields();
     }
   };
 
@@ -107,12 +129,14 @@ export default function Home() {
         alert("購入処理に失敗しました");
       }
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        alert(`購入処理に失敗しました: ${error.message}`);
-      } else {
-        alert("購入処理に失敗しました: 不明なエラーが発生しました");
-      }
+      alert("購入処理に失敗しました");
     }
+  };
+
+  const resetFields = (): void => {
+    setProductCode("");
+    setProductName("");
+    setProductPrice("");
   };
 
   return (
@@ -138,7 +162,7 @@ export default function Home() {
             placeholder="商品コード"
             className="mb-2 w-full sm:w-1/2"
           />
-          <Button className="w-full sm:w-1/2" onClick={handleReadProduct}>
+          <Button className="w-full sm:w-1/2" onClick={handleProductFetch}>
             読み込み
           </Button>
         </div>
@@ -146,19 +170,29 @@ export default function Home() {
           <Input
             type="text"
             value={productName}
-            readOnly
+            onChange={(e) => setProductName(e.target.value)}
             placeholder="商品名"
             className="mb-2 w-full sm:w-1/2"
+            readOnly={!isProductNotFound}
           />
           <Input
             type="text"
             value={productPrice}
-            readOnly
+            onChange={(e) => setProductPrice(e.target.value)}
             placeholder="単価"
             className="mb-2 w-full sm:w-1/2"
+            readOnly={!isProductNotFound}
           />
-          <Button className="w-full sm:w-1/2" onClick={handleAddProduct}>
-            追加
+          {isProductNotFound && (
+            <Button
+              className="w-full sm:w-1/2 mb-2"
+              onClick={handleProductRegister}
+            >
+              商品登録
+            </Button>
+          )}
+          <Button className="w-full sm:w-1/2" onClick={handleAddToCart}>
+            カートに追加
           </Button>
         </div>
         <div className="mb-4">
