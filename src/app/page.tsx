@@ -21,24 +21,6 @@ interface PurchaseItem {
   total: number;
 }
 
-interface ItemResponse {
-  id?: number;
-  name?: string;
-  price?: number;
-  message?: string;
-}
-
-interface ProductCreateResponse {
-  id?: number;
-  name?: string;
-  price?: number;
-}
-
-interface OrderResponse {
-  message?: string;
-  order_id?: number;
-}
-
 export default function Home() {
   const [productCode, setProductCode] = useState<string>("");
   const [productName, setProductName] = useState<string>("");
@@ -46,29 +28,49 @@ export default function Home() {
   const [purchaseList, setPurchaseList] = useState<PurchaseItem[]>([]);
   const [isProductNotFound, setIsProductNotFound] = useState<boolean>(false);
 
+  const handleApiCall = async (
+    url: string,
+    method: "GET" | "POST",
+    data?: unknown
+  ): Promise<unknown> => {
+    try {
+      if (method === "GET") {
+        const response = await axios.get(url);
+        return response.data;
+      } else if (method === "POST") {
+        const response = await axios.post(url, data);
+        return response.data;
+      }
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 404) {
+          alert("商品がマスタ未登録です");
+          setIsProductNotFound(true);
+        } else {
+          alert(`エラーが発生しました: ${error.message}`);
+        }
+      } else if (error instanceof Error) {
+        alert(`エラーが発生しました: ${error.message}`);
+      } else {
+        alert("不明なエラーが発生しました");
+      }
+      return null;
+    }
+  };
+
   const handleProductFetch = async (): Promise<void> => {
     if (!productCode) {
       alert("商品コードを入力してください。");
       return;
     }
-    try {
-      const response = await axios.get<ItemResponse>(
-        `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/product?code=${productCode}`
-      );
-      if (response.data && response.data.name) {
-        setProductName(response.data.name);
-        setProductPrice(response.data.price?.toString() || "");
-        setIsProductNotFound(false);
-      }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        alert("商品がマスタ未登録です");
-        setProductName("");
-        setProductPrice("");
-        setIsProductNotFound(true);
-      } else {
-        alert("商品情報の取得に失敗しました");
-      }
+    const data = await handleApiCall<{ name: string; price: number }>(
+      `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/product?code=${productCode}`,
+      "GET"
+    );
+    if (data && data.name) {
+      setProductName(data.name);
+      setProductPrice(data.price?.toString() || "");
+      setIsProductNotFound(false);
     }
   };
 
@@ -77,23 +79,18 @@ export default function Home() {
       alert("商品コード、名前、および価格を入力してください。");
       return;
     }
-    try {
-      const response = await axios.post<ProductCreateResponse>(
-        `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/create_product/`,
-        {
-          code: productCode,
-          name: productName,
-          price: parseInt(productPrice),
-        }
-      );
-      if (response.data && response.data.name) {
-        alert(`商品「${response.data.name}」が新しく登録されました。`);
-        setIsProductNotFound(false);
-      } else {
-        alert("商品をデータベースに保存できませんでした");
+    const data = await handleApiCall(
+      `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/create_product/`,
+      "POST",
+      {
+        code: productCode,
+        name: productName,
+        price: parseInt(productPrice),
       }
-    } catch (error: unknown) {
-      alert("商品保存に失敗しました");
+    );
+    if (data && data.name) {
+      alert(`商品「${data.name}」が新しく登録されました。`);
+      setIsProductNotFound(false);
     }
   };
 
@@ -118,18 +115,23 @@ export default function Home() {
         items: purchaseList,
         total,
       };
-      const response = await axios.post<OrderResponse>(
+      const data = await handleApiCall(
         `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/orders`,
+        "POST",
         purchaseData
       );
-      if (response.data && response.data.message) {
+      if (data && data.message) {
         alert(`合計金額: ${total}円`);
         setPurchaseList([]);
-      } else {
-        alert("購入処理に失敗しました");
       }
     } catch (error: unknown) {
-      alert("購入処理に失敗しました");
+      if (axios.isAxiosError(error)) {
+        alert(`購入処理に失敗しました: ${error.message}`);
+      } else if (error instanceof Error) {
+        alert(`購入処理に失敗しました: ${error.message}`);
+      } else {
+        alert("購入処理に失敗しました: 不明なエラーが発生しました");
+      }
     }
   };
 
