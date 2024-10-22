@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import Quagga from "@ericblade/quagga2";
 
@@ -31,6 +31,54 @@ export default function Home() {
     return () => stopQuagga();
   }, [isScanning]);
 
+  const handleProductFetch = useCallback(async (): Promise<void> => {
+    if (!productCode) {
+      handleAlert("商品コードを入力してください。");
+      return;
+    }
+    const data = await getApiCall(
+      `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/product?code=${productCode}`
+    );
+    if (data && data.name) {
+      setProductName(data.name);
+      setProductPrice(data.price?.toString() || "");
+    }
+  }, [productCode]);
+
+  const stopQuagga = useCallback(() => {
+    Quagga.stop();
+    Quagga.offDetected();
+  }, []);
+
+  const startQuagga = useCallback(() => {
+    Quagga.init(
+      {
+        inputStream: {
+          type: "LiveStream",
+          target: document.querySelector("#scanner-container") || undefined,
+          constraints: {
+            facingMode: "environment",
+          },
+        },
+        decoder: {
+          readers: ["ean_reader", "code_128_reader"],
+        },
+      },
+      (err) => {
+        if (err) return console.error("Error initializing Quagga:", err);
+        Quagga.start();
+      }
+    );
+    Quagga.onDetected(async (data) => {
+      if (data?.codeResult?.code) {
+        setProductCode(data.codeResult.code);
+        setIsScanning(false);
+        stopQuagga();
+        await handleProductFetch();
+      }
+    });
+  }, [handleProductFetch]);
+
   const handleAlert = (message: string) => {
     alert(message);
   };
@@ -38,16 +86,6 @@ export default function Home() {
   const getApiCall = async (url: string) => {
     try {
       const response = await axios.get(url);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-      return null;
-    }
-  };
-
-  const postApiCall = async (url: string, data: unknown) => {
-    try {
-      const response = await axios.post(url, data);
       return response.data;
     } catch (error) {
       handleApiError(error);
@@ -65,20 +103,6 @@ export default function Home() {
     }
   };
 
-  const handleProductFetch = async (): Promise<void> => {
-    if (!productCode) {
-      handleAlert("商品コードを入力してください。");
-      return;
-    }
-    const data = await getApiCall(
-      `https://tech-url/product?code=${productCode}`
-    );
-    if (data && data.name) {
-      setProductName(data.name);
-      setProductPrice(data.price?.toString() || "");
-    }
-  };
-
   const handleAddToCart = () => {
     if (productName && productPrice) {
       setPurchaseList([
@@ -93,35 +117,6 @@ export default function Home() {
       handleAlert(`商品「${productName}」が購入リストに追加されました。`);
       resetFields();
     }
-  };
-
-  const startQuagga = () => {
-    Quagga.init(
-      {
-        inputStream: {
-          type: "LiveStream",
-          target: document.querySelector("#scanner-container") || undefined,
-          constraints: { facingMode: "environment" },
-        },
-        decoder: { readers: ["ean_reader", "code_128_reader"] },
-      },
-      (err) => {
-        if (err) return console.error("Error initializing Quagga:", err);
-        Quagga.start();
-      }
-    );
-    Quagga.onDetected(async (data) => {
-      if (data?.codeResult?.code) {
-        setProductCode(data.codeResult.code);
-        setIsScanning(false);
-        stopQuagga();
-        await handleProductFetch();
-      }
-    });
-  };
-
-  const stopQuagga = () => {
-    Quagga.stop();
   };
 
   const resetFields = () => {
