@@ -19,7 +19,6 @@ export default function Example() {
       <>
         {/*
           This example requires updating your template:
-  
           ```
           <html class="h-full bg-white">
           <body class="h-full">
@@ -32,12 +31,9 @@ export default function Example() {
               height={40}
               className="mx-auto h-10 w-auto"
             />
-              className="mx-auto h-10 w-auto"
-            />
             <h2 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
               Sign in to your account
             </h2>
-          </div>
   
           <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
             <form action="#" method="POST" className="space-y-6">
