@@ -21,11 +21,6 @@ interface PurchaseItem {
   total: number;
 }
 
-interface ProductData {
-  name: string;
-  price: number;
-}
-
 interface ApiResponse {
   name: string;
   price: number;
@@ -131,7 +126,7 @@ export default function Home() {
         "POST",
         purchaseData
       );
-      if (data && data.message) {
+      if (data) {
         alert(`合計金額: ${total}円`);
         setPurchaseList([]);
       }
