@@ -126,60 +126,67 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-lg">
-      <main className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4 text-center">POSアプリ</h1>
-        <div className="mb-4 flex flex-col items-center">
+    <div className="container mx-auto p-8 max-w-2xl bg-yellow-200 rounded-3xl shadow-lg">
+      <main className="p-6">
+        <h1 className="text-3xl font-bold mb-6 text-center text-orange-800 font-retro">よみとるよん！</h1>
+        <div className="mb-6 flex flex-col items-center">
           <Button
             className={`w-full sm:w-1/2 ${buttonVariants({
-              variant: "outline",
-            })}`}
+              variant: "solid",
+            })} mb-4 px-6 py-3 text-lg rounded-lg shadow-md bg-orange-900 text-white hover:bg-orange-400`}
             onClick={() => setIsScanning(!isScanning)}
           >
             {isScanning ? "スキャン停止" : "スキャン（カメラ）"}
           </Button>
           <div
             id="scanner-container"
-            className="w-full sm:w-1/2 h-36 mb-4 border-2"
-          ></div>
+            className="w-full sm:w-1/2 h-48 mb-4 border-2 rounded-lg flex items-center justify-center bg-gray-300"
+          >
+            {isScanning && <p className="text-brown-700 text-center">スキャン中...</p>}
+          </div>
           <Input
             type="text"
             value={productCode}
             onChange={(e) => setProductCode(e.target.value)}
-            placeholder="商品コード"
-            className="mb-2 w-full sm:w-1/2"
+            placeholder="商品コードを入力"
+            className="mb-4 w-full sm:w-1/2 rounded-lg border border-brown-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 text-center font-retro"
           />
         </div>
-        <div className="mb-4 flex flex-col items-center">
+        <div className="mb-6 flex flex-col items-center">
           <Input
             type="text"
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             placeholder="商品名"
-            className="mb-2 w-full sm:w-1/2"
+            className="mb-4 w-full sm:w-1/2 rounded-lg border border-brown-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 text-center font-retro"
           />
           <Input
             type="text"
             value={productPrice}
             onChange={(e) => setProductPrice(e.target.value)}
             placeholder="単価"
-            className="mb-2 w-full sm:w-1/2"
+            className="mb-4 w-full sm:w-1/2 rounded-lg border border-brown-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 text-center font-retro"
           />
           <Button
             className={`w-full sm:w-1/2 ${buttonVariants({
-              variant: "outline",
-            })}`}
+              variant: "solid",
+            })} px-6 py-3 text-lg rounded-lg bg-orange-900 text-white shadow-md hover:bg-orange-400`}
             onClick={handleAddToCart}
           >
             追加
           </Button>
         </div>
-        <div className="mb-4">
-          <h2 className="text-xl font-bold mb-2 text-center">購入リスト</h2>
-          <ul className="list-disc list-inside">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold mb-4 text-center text-orange-800 font-retro">購入リスト</h2>
+          <ul className="list-none">
             {purchaseList.map((item, index) => (
-              <li key={index} className="text-center">
-                {item.name} x{item.quantity} {item.price}円 {item.total}円
+              <li
+                key={index}
+                className="flex justify-between bg-brown-200 p-4 mb-2 rounded-lg shadow-sm hover:bg-brown-300 text-center font-retro text-white"
+              >
+                <span>{item.name} x{item.quantity}</span>
+                <span>{item.price}円</span>
+                <span>{item.total}円</span>
               </li>
             ))}
           </ul>
@@ -188,3 +195,4 @@ export default function Home() {
     </div>
   );
 }
+
