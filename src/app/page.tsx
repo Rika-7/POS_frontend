@@ -14,174 +14,117 @@ interface PurchaseItem {
   total: number;
 }
 
-interface ApiResponse {
-  name: string;
-  price: number;
-}
-
 export default function Home() {
   const [productCode, setProductCode] = useState<string>("");
   const [productName, setProductName] = useState<string>("");
   const [productPrice, setProductPrice] = useState<string>("");
   const [purchaseList, setPurchaseList] = useState<PurchaseItem[]>([]);
-  const [isProductNotFound, setIsProductNotFound] = useState<boolean>(false);
   const [isScanning, setIsScanning] = useState<boolean>(false);
 
   useEffect(() => {
     if (isScanning) {
-      // バーコードスキャンの開始
-      Quagga.init(
-        {
-          inputStream: {
-            type: "LiveStream",
-            target: document.querySelector("#scanner-container") || undefined,
-            constraints: {
-              facingMode: "environment", // Use the back camera
-            },
-          },
-          decoder: {
-            readers: ["ean_reader", "code_128_reader"],
-          },
-        },
-        (err) => {
-          if (err) {
-            console.error("Error initializing Quagga:", err);
-            return;
-          }
-          Quagga.start();
-        }
-      );
-
-      // バーコードが検出されたときの処理
-      Quagga.onDetected(async (data) => {
-        if (data && data.codeResult && data.codeResult.code) {
-          setProductCode(data.codeResult.code);
-          setIsScanning(false);
-          Quagga.stop();
-
-          // 自動で商品情報を取得
-          await handleProductFetch();
-        }
-      });
+      startQuagga();
     } else {
-      // スキャンの停止
-      Quagga.stop();
+      stopQuagga();
     }
 
-    return () => {
-      Quagga.stop(); // 時間が経過したときにスキャナを停止
-    };
+    return () => stopQuagga();
   }, [isScanning]);
 
-  const handleApiCall = async (
-    url: string,
-    method: "GET" | "POST",
-    data?: unknown
-  ): Promise<ApiResponse | null> => {
-    // Correct type for returned data
+  const handleAlert = (message: string) => {
+    alert(message);
+  };
+
+  const getApiCall = async (url: string) => {
     try {
-      if (method === "GET") {
-        const response = await axios.get(url);
-        return response.data;
-      } else if (method === "POST") {
-        const response = await axios.post(url, data);
-        return response.data;
-      }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 404) {
-          alert("商品がマスタ未登録です");
-          setIsProductNotFound(true);
-        } else {
-          alert(`エラーが発生しました: ${error.message}`);
-        }
-      } else if (error instanceof Error) {
-        alert(`エラーが発生しました: ${error.message}`);
-      } else {
-        alert("不明なエラーが発生しました");
-      }
+      const response = await axios.get(url);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      return null;
     }
-    return null;
+  };
+
+  const postApiCall = async (url: string, data: unknown) => {
+    try {
+      const response = await axios.post(url, data);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      return null;
+    }
+  };
+
+  const handleApiError = (error: unknown) => {
+    if (axios.isAxiosError(error)) {
+      handleAlert(`エラーが発生しました: ${error.message}`);
+    } else if (error instanceof Error) {
+      handleAlert(`エラーが発生しました: ${error.message}`);
+    } else {
+      handleAlert("不明なエラーが発生しました");
+    }
   };
 
   const handleProductFetch = async (): Promise<void> => {
     if (!productCode) {
-      alert("商品コードを入力してください。");
+      handleAlert("商品コードを入力してください。");
       return;
     }
-    const data = await handleApiCall(
-      `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/product?code=${productCode}`,
-      "GET"
+    const data = await getApiCall(
+      `https://tech-url/product?code=${productCode}`
     );
     if (data && data.name) {
       setProductName(data.name);
       setProductPrice(data.price?.toString() || "");
-      setIsProductNotFound(false);
     }
   };
 
-  const handleProductRegister = async (): Promise<void> => {
-    if (!productCode || !productName || !productPrice) {
-      alert("商品コード、名前、および価格を入力してください。");
-      return;
-    }
-    const data = await handleApiCall(
-      `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/create_product/`,
-      "POST",
-      {
-        code: productCode,
-        name: productName,
-        price: parseInt(productPrice),
-      }
-    );
-    if (data && data.name) {
-      alert(`商品「${data.name}」が新しく登録されました。`);
-      setIsProductNotFound(false);
-    }
-  };
-
-  const handleAddToCart = (): void => {
+  const handleAddToCart = () => {
     if (productName && productPrice) {
-      const newItem: PurchaseItem = {
-        name: productName,
-        quantity: 1,
-        price: parseInt(productPrice),
-        total: parseInt(productPrice),
-      };
-      setPurchaseList([...purchaseList, newItem]);
-      alert(`商品「${productName}」が購入リストに追加されました。`);
+      setPurchaseList([
+        ...purchaseList,
+        {
+          name: productName,
+          quantity: 1,
+          price: parseInt(productPrice),
+          total: parseInt(productPrice),
+        },
+      ]);
+      handleAlert(`商品「${productName}」が購入リストに追加されました。`);
       resetFields();
     }
   };
 
-  const handlePurchase = async (): Promise<void> => {
-    try {
-      const total = purchaseList.reduce((sum, item) => sum + item.total, 0);
-      const purchaseData = {
-        items: purchaseList,
-        total,
-      };
-      const data = await handleApiCall(
-        `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/orders`,
-        "POST",
-        purchaseData
-      );
-      if (data) {
-        alert(`合計金額: ${total}円`);
-        setPurchaseList([]);
+  const startQuagga = () => {
+    Quagga.init(
+      {
+        inputStream: {
+          type: "LiveStream",
+          target: document.querySelector("#scanner-container") || undefined,
+          constraints: { facingMode: "environment" },
+        },
+        decoder: { readers: ["ean_reader", "code_128_reader"] },
+      },
+      (err) => {
+        if (err) return console.error("Error initializing Quagga:", err);
+        Quagga.start();
       }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        alert(`購入処理に失敗しました: ${error.message}`);
-      } else if (error instanceof Error) {
-        alert(`購入処理に失敗しました: ${error.message}`);
-      } else {
-        alert("購入処理に失敗しました: 不明なエラーが発生しました");
+    );
+    Quagga.onDetected(async (data) => {
+      if (data?.codeResult?.code) {
+        setProductCode(data.codeResult.code);
+        setIsScanning(false);
+        stopQuagga();
+        await handleProductFetch();
       }
-    }
+    });
   };
 
-  const resetFields = (): void => {
+  const stopQuagga = () => {
+    Quagga.stop();
+  };
+
+  const resetFields = () => {
     setProductCode("");
     setProductName("");
     setProductPrice("");
@@ -204,7 +147,6 @@ export default function Home() {
             id="scanner-container"
             className="w-full sm:w-1/2 h-36 mb-4 border-2"
           ></div>
-
           <Input
             type="text"
             value={productCode}
@@ -220,7 +162,6 @@ export default function Home() {
             onChange={(e) => setProductName(e.target.value)}
             placeholder="商品名"
             className="mb-2 w-full sm:w-1/2"
-            readOnly={!isProductNotFound}
           />
           <Input
             type="text"
@@ -228,16 +169,7 @@ export default function Home() {
             onChange={(e) => setProductPrice(e.target.value)}
             placeholder="単価"
             className="mb-2 w-full sm:w-1/2"
-            readOnly={!isProductNotFound}
           />
-          {isProductNotFound && (
-            <Button
-              className="w-full sm:w-1/2 mb-2"
-              onClick={handleProductRegister}
-            >
-              商品登録
-            </Button>
-          )}
           <Button
             className={`w-full sm:w-1/2 ${buttonVariants({
               variant: "outline",
@@ -256,16 +188,6 @@ export default function Home() {
               </li>
             ))}
           </ul>
-        </div>
-        <div className="flex justify-center">
-          <Button
-            className={`w-full sm:w-1/2 ${buttonVariants({
-              variant: "outline",
-            })}`}
-            onClick={handlePurchase}
-          >
-            購入
-          </Button>
         </div>
       </main>
     </div>
