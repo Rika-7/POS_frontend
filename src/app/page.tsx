@@ -21,6 +21,16 @@ interface PurchaseItem {
   total: number;
 }
 
+interface ProductData {
+  name: string;
+  price: number;
+}
+
+interface ApiResponse {
+  name: string;
+  price: number;
+}
+
 export default function Home() {
   const [productCode, setProductCode] = useState<string>("");
   const [productName, setProductName] = useState<string>("");
@@ -32,7 +42,8 @@ export default function Home() {
     url: string,
     method: "GET" | "POST",
     data?: unknown
-  ): Promise<unknown> => {
+  ): Promise<ApiResponse | null> => {
+    // Correct type for returned data
     try {
       if (method === "GET") {
         const response = await axios.get(url);
@@ -54,15 +65,15 @@ export default function Home() {
       } else {
         alert("不明なエラーが発生しました");
       }
-      return null;
     }
+    return null;
   };
 
   const handleProductFetch = async (): Promise<void> => {
     if (!productCode) {
       alert("商品コードを入力してください。");
       return;
-    if (data) {
+    }
     const data = await handleApiCall(
       `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/product?code=${productCode}`,
       "GET"
