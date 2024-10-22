@@ -29,7 +29,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isScanning) {
-      // Start the barcode scanner when scanning is enabled
+      // バーコードスキャンの開始
       Quagga.init(
         {
           inputStream: {
@@ -40,7 +40,7 @@ export default function Home() {
             },
           },
           decoder: {
-            readers: ["ean_reader", "code_128_reader"], // Add more readers as necessary
+            readers: ["ean_reader", "code_128_reader"],
           },
         },
         (err) => {
@@ -52,21 +52,24 @@ export default function Home() {
         }
       );
 
-      // Set up event listener for detected barcodes
-      Quagga.onDetected((data) => {
+      // バーコードが検出されたときの処理
+      Quagga.onDetected(async (data) => {
         if (data && data.codeResult && data.codeResult.code) {
           setProductCode(data.codeResult.code);
           setIsScanning(false);
           Quagga.stop();
+
+          // 自動で商品情報を取得
+          await handleProductFetch();
         }
       });
     } else {
-      // Stop scanning if not scanning
+      // スキャンの停止
       Quagga.stop();
     }
 
     return () => {
-      Quagga.stop(); // Ensure Quagga stops if the component unmounts
+      Quagga.stop(); // 時間が経過したときにスキャナを停止
     };
   }, [isScanning]);
 
@@ -199,7 +202,7 @@ export default function Home() {
           </Button>
           <div
             id="scanner-container"
-            className="w-full sm:w-1/2 h-64 mb-4 border-2"
+            className="w-full sm:w-1/2 h-36 mb-4 border-2"
           ></div>
 
           <Input
@@ -209,9 +212,6 @@ export default function Home() {
             placeholder="商品コード"
             className="mb-2 w-full sm:w-1/2"
           />
-          <Button className="w-full sm:w-1/2" onClick={handleProductFetch}>
-            読み込み
-          </Button>
         </div>
         <div className="mb-4 flex flex-col items-center">
           <Input
