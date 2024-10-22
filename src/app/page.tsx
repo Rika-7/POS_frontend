@@ -1,18 +1,11 @@
 "use client";
 
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useState } from "react";
 import axios from "axios";
+import Quagga from "@ericblade/quagga2";
 
 interface PurchaseItem {
   name: string;
@@ -32,6 +25,50 @@ export default function Home() {
   const [productPrice, setProductPrice] = useState<string>("");
   const [purchaseList, setPurchaseList] = useState<PurchaseItem[]>([]);
   const [isProductNotFound, setIsProductNotFound] = useState<boolean>(false);
+  const [isScanning, setIsScanning] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isScanning) {
+      // Start the barcode scanner when scanning is enabled
+      Quagga.init(
+        {
+          inputStream: {
+            type: "LiveStream",
+            target: document.querySelector("#scanner-container") || undefined,
+            constraints: {
+              facingMode: "environment", // Use the back camera
+            },
+          },
+          decoder: {
+            readers: ["ean_reader", "code_128_reader"], // Add more readers as necessary
+          },
+        },
+        (err) => {
+          if (err) {
+            console.error("Error initializing Quagga:", err);
+            return;
+          }
+          Quagga.start();
+        }
+      );
+
+      // Set up event listener for detected barcodes
+      Quagga.onDetected((data) => {
+        if (data && data.codeResult && data.codeResult.code) {
+          setProductCode(data.codeResult.code);
+          setIsScanning(false);
+          Quagga.stop();
+        }
+      });
+    } else {
+      // Stop scanning if not scanning
+      Quagga.stop();
+    }
+
+    return () => {
+      Quagga.stop(); // Ensure Quagga stops if the component unmounts
+    };
+  }, [isScanning]);
 
   const handleApiCall = async (
     url: string,
@@ -149,20 +186,22 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-4 max-w-lg">
-      <NavigationMenu>
-        <NavigationMenuList>
-          <NavigationMenuItem>
-            <Link href="/cart" legacyBehavior passHref>
-              <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                カート
-              </NavigationMenuLink>
-            </Link>
-          </NavigationMenuItem>
-        </NavigationMenuList>
-      </NavigationMenu>
       <main className="container mx-auto p-4">
         <h1 className="text-2xl font-bold mb-4 text-center">POSアプリ</h1>
         <div className="mb-4 flex flex-col items-center">
+          <Button
+            className={`w-full sm:w-1/2 ${buttonVariants({
+              variant: "outline",
+            })}`}
+            onClick={() => setIsScanning(!isScanning)}
+          >
+            {isScanning ? "スキャン停止" : "スキャン（カメラ）"}
+          </Button>
+          <div
+            id="scanner-container"
+            className="w-full sm:w-1/2 h-64 mb-4 border-2"
+          ></div>
+
           <Input
             type="text"
             value={productCode}
@@ -199,8 +238,13 @@ export default function Home() {
               商品登録
             </Button>
           )}
-          <Button className="w-full sm:w-1/2" onClick={handleAddToCart}>
-            カートに追加
+          <Button
+            className={`w-full sm:w-1/2 ${buttonVariants({
+              variant: "outline",
+            })}`}
+            onClick={handleAddToCart}
+          >
+            追加
           </Button>
         </div>
         <div className="mb-4">
