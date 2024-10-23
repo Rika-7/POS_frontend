@@ -33,7 +33,7 @@ export default function Home() {
 
   const handleProductFetch = useCallback(async (): Promise<void> => {
     if (!productCode) {
-      handleAlert("商品コードを入力してください。");
+      handleAlert("商品コードを読み取りました。");
       return;
     }
     const data = await getApiCall(
@@ -126,13 +126,15 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto p-8 max-w-2xl bg-yellow-200 rounded-3xl shadow-lg">
+    <div className="container mx-auto p-8 max-w-2xl bg-yellow-100 rounded-3xl shadow-lg">
       <main className="p-6">
-        <h1 className="text-3xl font-bold mb-6 text-center text-orange-800 font-retro">よみとるよん！</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center text-orange-800 font-retro">
+          よみとるよん！
+        </h1>
         <div className="mb-6 flex flex-col items-center">
           <Button
             className={`w-full sm:w-1/2 ${buttonVariants({
-              variant: "solid",
+              variant: "outline",
             })} mb-4 px-6 py-3 text-lg rounded-lg shadow-md bg-orange-900 text-white hover:bg-orange-400`}
             onClick={() => setIsScanning(!isScanning)}
           >
@@ -142,7 +144,9 @@ export default function Home() {
             id="scanner-container"
             className="w-full sm:w-1/2 h-48 mb-4 border-2 rounded-lg flex items-center justify-center bg-gray-300"
           >
-            {isScanning && <p className="text-brown-700 text-center">スキャン中...</p>}
+            {isScanning && (
+              <p className="text-brown-700 text-center">スキャン中...</p>
+            )}
           </div>
           <Input
             type="text"
@@ -169,7 +173,7 @@ export default function Home() {
           />
           <Button
             className={`w-full sm:w-1/2 ${buttonVariants({
-              variant: "solid",
+              variant: "outline",
             })} px-6 py-3 text-lg rounded-lg bg-orange-900 text-white shadow-md hover:bg-orange-400`}
             onClick={handleAddToCart}
           >
@@ -177,14 +181,18 @@ export default function Home() {
           </Button>
         </div>
         <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-4 text-center text-orange-800 font-retro">購入リスト</h2>
+          <h2 className="text-2xl font-bold mb-4 text-center text-orange-800 font-retro">
+            購入リスト
+          </h2>
           <ul className="list-none">
             {purchaseList.map((item, index) => (
               <li
                 key={index}
                 className="flex justify-between bg-brown-200 p-4 mb-2 rounded-lg shadow-sm hover:bg-brown-300 text-center font-retro text-white"
               >
-                <span>{item.name} x{item.quantity}</span>
+                <span>
+                  {item.name} x{item.quantity}
+                </span>
                 <span>{item.price}円</span>
                 <span>{item.total}円</span>
               </li>
@@ -195,4 +203,3 @@ export default function Home() {
     </div>
   );
 }
-
