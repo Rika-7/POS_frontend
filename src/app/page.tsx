@@ -125,6 +125,20 @@ export default function Home() {
     setProductPrice("");
   };
 
+  const [letter, setLetter] = useState<string>("");
+
+  useEffect(() => {
+    const fetchLetter = async () => {
+      const res = await fetch(
+        `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net`
+      );
+      const data = await res.text();
+      setLetter(data);
+    };
+
+    fetchLetter();
+  }, []);
+
   return (
     <div className="container mx-auto p-8 max-w-2xl bg-yellow-100 rounded-3xl shadow-lg">
       <main className="p-6">
@@ -198,6 +212,7 @@ export default function Home() {
               </li>
             ))}
           </ul>
+          <p>{letter}</p>
         </div>
       </main>
     </div>
