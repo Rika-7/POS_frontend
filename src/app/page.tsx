@@ -7,17 +7,47 @@ import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import Quagga from "@ericblade/quagga2";
 
-interface PurchaseItem {
+interface Product {
+  id: number;
+  code: string;
   name: string;
-  quantity: number;
   price: number;
-  total: number;
 }
+interface PurchaseItem {
+  product_id: number;
+  product_code: string;
+  product_name: string;
+  product_price: number;
+  quantity: number;
+  total: number; // Added for display purposes
+}
+
+interface Order {
+  emp_cd: string;
+  items: OrderItem[];
+}
+
+interface OrderItem {
+  product_id: number;
+  product_code: string;
+  product_name: string;
+  product_price: number;
+  quantity: number;
+}
+
+interface OrderResponse {
+  message: string;
+  order_id: number;
+  total_amount: number;
+  total_amount_ex_tax: number;
+}
+
+const API_BASE_URL =
+  "https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net";
 
 export default function Home() {
   const [productCode, setProductCode] = useState<string>("");
-  const [productName, setProductName] = useState<string>("");
-  const [productPrice, setProductPrice] = useState<string>("");
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [purchaseList, setPurchaseList] = useState<PurchaseItem[]>([]);
   const [isScanning, setIsScanning] = useState<boolean>(false);
 
@@ -36,12 +66,26 @@ export default function Home() {
       handleAlert("商品コードを読み取りました。");
       return;
     }
-    const data = await getApiCall(
-      `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net/product?code=${productCode}`
-    );
-    if (data && data.name) {
-      setProductName(data.name);
-      setProductPrice(data.price?.toString() || "");
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/product?code=${productCode}`
+      );
+      const data = response.data;
+      if (data) {
+        setCurrentProduct({
+          id: data.id,
+          code: productCode,
+          name: data.name,
+          price: data.price,
+        });
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        handleAlert("商品がマスタ未登録です");
+      } else {
+        handleApiError(error);
+      }
+      setCurrentProduct(null);
     }
   }, [productCode]);
 
@@ -54,10 +98,13 @@ export default function Home() {
     Quagga.init(
       {
         inputStream: {
+          name: "Live",
           type: "LiveStream",
           target: document.querySelector("#scanner-container") || undefined,
           constraints: {
             facingMode: "environment",
+            width: 480,
+            height: 320,
           },
         },
         decoder: {
@@ -69,6 +116,7 @@ export default function Home() {
         Quagga.start();
       }
     );
+
     Quagga.onDetected(async (data) => {
       if (data?.codeResult?.code) {
         setProductCode(data.codeResult.code);
@@ -83,16 +131,6 @@ export default function Home() {
     alert(message);
   };
 
-  const getApiCall = async (url: string) => {
-    try {
-      const response = await axios.get(url);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-      return null;
-    }
-  };
-
   const handleApiError = (error: unknown) => {
     if (axios.isAxiosError(error)) {
       handleAlert(`エラーが発生しました: ${error.message}`);
@@ -104,40 +142,84 @@ export default function Home() {
   };
 
   const handleAddToCart = () => {
-    if (productName && productPrice) {
-      setPurchaseList([
-        ...purchaseList,
-        {
-          name: productName,
+    if (currentProduct) {
+      const existingItemIndex = purchaseList.findIndex(
+        (item) => item.product_code === currentProduct.code
+      );
+
+      if (existingItemIndex > -1) {
+        // Update existing item quantity
+        const updatedList = [...purchaseList];
+        updatedList[existingItemIndex].quantity += 1;
+        updatedList[existingItemIndex].total =
+          updatedList[existingItemIndex].quantity *
+          updatedList[existingItemIndex].product_price;
+        setPurchaseList(updatedList);
+      } else {
+        // Add new item
+        const newItem: PurchaseItem = {
+          product_id: currentProduct.id,
+          product_code: currentProduct.code,
+          product_name: currentProduct.name,
+          product_price: currentProduct.price,
           quantity: 1,
-          price: parseInt(productPrice),
-          total: parseInt(productPrice),
-        },
-      ]);
-      handleAlert(`商品「${productName}」が購入リストに追加されました。`);
+          total: currentProduct.price,
+        };
+        setPurchaseList([...purchaseList, newItem]);
+      }
+      handleAlert(
+        `商品「${currentProduct.name}」が購入リストに追加されました。`
+      );
       resetFields();
+    }
+  };
+
+  const handlePurchase = async () => {
+    if (purchaseList.length === 0) {
+      handleAlert("購入リストが空です。");
+      return;
+    }
+
+    const order: Order = {
+      emp_cd: "9999999999", // デフォルト値
+      items: purchaseList.map(
+        ({
+          product_id,
+          product_code,
+          product_name,
+          product_price,
+          quantity,
+        }) => ({
+          product_id,
+          product_code,
+          product_name,
+          product_price,
+          quantity,
+        })
+      ),
+    };
+
+    try {
+      const response = await axios.post<OrderResponse>(
+        `${API_BASE_URL}/orders`,
+        order
+      );
+      const { total_amount, total_amount_ex_tax } = response.data;
+      handleAlert(
+        `購入が完了しました。\n` +
+          `合計金額（税込）: ${total_amount}円\n` +
+          `合計金額（税抜）: ${total_amount_ex_tax}円`
+      );
+      setPurchaseList([]);
+    } catch (error) {
+      handleApiError(error);
     }
   };
 
   const resetFields = () => {
     setProductCode("");
-    setProductName("");
-    setProductPrice("");
+    setCurrentProduct(null);
   };
-
-  const [letter, setLetter] = useState<string>("");
-
-  useEffect(() => {
-    const fetchLetter = async () => {
-      const res = await fetch(
-        `https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net`
-      );
-      const data = await res.text();
-      setLetter(data);
-    };
-
-    fetchLetter();
-  }, []);
 
   return (
     <div className="container mx-auto p-8 max-w-2xl bg-yellow-100 rounded-3xl shadow-lg">
@@ -156,16 +238,23 @@ export default function Home() {
           </Button>
           <div
             id="scanner-container"
-            className="w-full sm:w-1/2 h-48 mb-4 border-2 rounded-lg flex items-center justify-center bg-gray-300"
+            style={{
+              width: "280px",
+              height: "180px",
+              marginBottom: "1rem",
+            }}
           >
-            {isScanning && (
-              <p className="text-brown-700 text-center">スキャン中...</p>
+            {!isScanning && (
+              <div className="w-full h-full flex items-center justify-center bg-gray-300">
+                <p className="text-brown-700 text-center">カメラ停止中...</p>
+              </div>
             )}
           </div>
           <Input
             type="text"
             value={productCode}
             onChange={(e) => setProductCode(e.target.value)}
+            onBlur={handleProductFetch}
             placeholder="商品コードを入力"
             className="mb-4 w-full sm:w-1/2 rounded-lg border border-brown-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 text-center font-retro"
           />
@@ -173,15 +262,15 @@ export default function Home() {
         <div className="mb-6 flex flex-col items-center">
           <Input
             type="text"
-            value={productName}
-            onChange={(e) => setProductName(e.target.value)}
+            value={currentProduct?.name || ""}
+            readOnly
             placeholder="商品名"
             className="mb-4 w-full sm:w-1/2 rounded-lg border border-brown-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 text-center font-retro"
           />
           <Input
             type="text"
-            value={productPrice}
-            onChange={(e) => setProductPrice(e.target.value)}
+            value={currentProduct?.price ? `${currentProduct.price}円` : ""}
+            readOnly
             placeholder="単価"
             className="mb-4 w-full sm:w-1/2 rounded-lg border border-brown-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brown-500 text-center font-retro"
           />
@@ -190,6 +279,7 @@ export default function Home() {
               variant: "outline",
             })} px-6 py-3 text-lg rounded-lg bg-orange-900 text-white shadow-md hover:bg-orange-400`}
             onClick={handleAddToCart}
+            disabled={!currentProduct}
           >
             追加
           </Button>
@@ -198,21 +288,30 @@ export default function Home() {
           <h2 className="text-2xl font-bold mb-4 text-center text-orange-800 font-retro">
             購入リスト
           </h2>
-          <ul className="list-none">
+          <ul className="list-none mb-4">
             {purchaseList.map((item, index) => (
               <li
                 key={index}
                 className="flex justify-between bg-brown-200 p-4 mb-2 rounded-lg shadow-sm hover:bg-brown-300 text-center font-retro text-white"
               >
                 <span>
-                  {item.name} x{item.quantity}
+                  {item.product_name} x{item.quantity}
                 </span>
-                <span>{item.price}円</span>
+                <span>{item.product_price}円</span>
                 <span>{item.total}円</span>
               </li>
             ))}
           </ul>
-          <p>{letter}</p>
+          {purchaseList.length > 0 && (
+            <Button
+              className={`w-full ${buttonVariants({
+                variant: "outline",
+              })} px-6 py-3 text-lg rounded-lg bg-green-600 text-white shadow-md hover:bg-green-500`}
+              onClick={handlePurchase}
+            >
+              購入
+            </Button>
+          )}
         </div>
       </main>
     </div>
