@@ -68,9 +68,10 @@ export default function Home() {
     }
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/product?code=${productCode}`
+        `${API_BASE_URL}/product/${productCode}`
       );
       const data = response.data;
+      console.log("API Response:", data);
       if (data) {
         setCurrentProduct({
           id: data.id,
@@ -81,13 +82,45 @@ export default function Home() {
       }
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
-        handleAlert("商品がマスタ未登録です");
+        console.log("Product not found, creating new product");
+        handleCreateProduct(productCode);
       } else {
         handleApiError(error);
       }
       setCurrentProduct(null);
     }
   }, [productCode]);
+
+  const handleCreateProduct = useCallback(async (barcode: string) => {
+    const name = prompt("新規商品の名前を入力してください:");
+    const priceString = prompt("商品の価格を入力してください:");
+    const price = priceString ? parseInt(priceString, 10) : NaN;
+
+    if (!name || isNaN(price)) {
+      handleAlert("無効な入力です。もう一度試してください。");
+      return;
+    }
+
+    try {
+      const response = await axios.post(`${API_BASE_URL}/create_product/`, {
+        code: barcode,
+        name,
+        price,
+      });
+      const data = response.data;
+      if (data) {
+        setCurrentProduct({
+          id: data.id,
+          code: data.code,
+          name: data.name,
+          price: data.price,
+        });
+        handleAlert(`新商品「${data.name}」が登録されました。`);
+      }
+    } catch (error) {
+      handleApiError(error);
+    }
+  }, []);
 
   const stopQuagga = useCallback(() => {
     Quagga.stop();
@@ -108,7 +141,12 @@ export default function Home() {
           },
         },
         decoder: {
-          readers: ["ean_reader", "code_128_reader"],
+          readers: [
+            "ean_reader",
+            "code_128_reader",
+            "upc_reader",
+            "ean_8_reader",
+          ],
         },
       },
       (err) => {
