@@ -104,8 +104,8 @@ export default function Home() {
     try {
       const response = await axios.post(`${API_BASE_URL}/create_product/`, {
         code: barcode,
-        name,
-        price,
+        name: name,
+        price: price,
       });
       const data = response.data;
       if (data) {
