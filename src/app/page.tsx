@@ -314,6 +314,8 @@ export default function Home() {
               width: "280px",
               height: "180px",
               marginBottom: "1rem",
+              position: "relative",
+              zIndex: "50",
             }}
           >
             {!isScanning && (
