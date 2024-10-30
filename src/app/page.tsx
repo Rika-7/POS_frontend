@@ -42,6 +42,13 @@ interface OrderResponse {
   total_amount_ex_tax: number;
 }
 
+interface Product {
+  id: number;
+  code: string;
+  name: string;
+  price: number;
+}
+
 const API_BASE_URL =
   "https://tech0-gen-7-step4-studentwebapp-pos-8-h0bja8ghfcd0ayat.eastus-01.azurewebsites.net";
 
@@ -61,7 +68,7 @@ export default function Home() {
     return () => stopQuagga();
   }, [isScanning]);
 
-  const handleCreateProduct = useCallback(async (barcode) => {
+  const handleCreateProduct = useCallback(async (barcode: string) => {
     const name = prompt("新規商品の名前を入力してください:");
     if (!name) {
       handleAlert("商品名が入力されていません。");
