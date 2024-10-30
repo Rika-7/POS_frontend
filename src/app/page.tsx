@@ -61,53 +61,48 @@ export default function Home() {
     return () => stopQuagga();
   }, [isScanning]);
 
-  const handleProductFetch = useCallback(async (): Promise<void> => {
-    if (!productCode) {
-      handleAlert("商品コードを読み取りました。");
-      return;
-    }
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/product/${productCode}`
-      );
-      const data = response.data;
-      console.log("API Response:", data);
-      if (data) {
-        setCurrentProduct({
-          id: data.id,
-          code: productCode,
-          name: data.name,
-          price: data.price,
-        });
-      }
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        console.log("Product not found, creating new product");
-        handleCreateProduct(productCode);
-      } else {
-        handleApiError(error);
-      }
-      setCurrentProduct(null);
-    }
-  }, [productCode]);
-
-  const handleCreateProduct = useCallback(async (barcode: string) => {
+  const handleCreateProduct = useCallback(async (barcode) => {
     const name = prompt("新規商品の名前を入力してください:");
-    const priceString = prompt("商品の価格を入力してください:");
-    const price = priceString ? parseInt(priceString, 10) : NaN;
+    if (!name) {
+      handleAlert("商品名が入力されていません。");
+      return;
+    }
 
-    if (!name || isNaN(price)) {
-      handleAlert("無効な入力です。もう一度試してください。");
+    const priceString = prompt("商品の価格を入力してください:");
+    if (!priceString) {
+      handleAlert("価格が入力されていません。");
+      return;
+    }
+
+    const price = parseInt(priceString);
+    if (isNaN(price) || price <= 0) {
+      handleAlert("有効な価格を入力してください。");
       return;
     }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/create_product/`, {
-        code: barcode,
+      const params = new URLSearchParams({
         name: name,
-        price: price,
+        price: price.toString(),
+        code: barcode,
       });
-      const data = response.data;
+
+      const response = await fetch(
+        `${API_BASE_URL}/create_product/?${params.toString()}`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 400) {
+          handleAlert("この商品コードは既に登録されています。");
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
       if (data) {
         setCurrentProduct({
           id: data.id,
@@ -119,8 +114,40 @@ export default function Home() {
       }
     } catch (error) {
       handleApiError(error);
+      setCurrentProduct(null);
     }
   }, []);
+
+  const handleProductFetch = useCallback(async () => {
+    if (!productCode) {
+      handleAlert("商品コードを入力してください。");
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/product/${productCode}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          console.log("Product not found, creating new product");
+          await handleCreateProduct(productCode);
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log("API Response:", data);
+      if (data) {
+        setCurrentProduct({
+          id: data.id,
+          code: productCode,
+          name: data.name,
+          price: data.price,
+        });
+      }
+    } catch (error) {
+      handleApiError(error);
+      setCurrentProduct(null);
+    }
+  }, [productCode, handleCreateProduct]);
 
   const stopQuagga = useCallback(() => {
     Quagga.stop();
