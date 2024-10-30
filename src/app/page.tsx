@@ -360,30 +360,98 @@ export default function Home() {
           <h2 className="text-2xl font-bold mb-4 text-center text-orange-800 font-retro">
             購入リスト
           </h2>
-          <ul className="list-none mb-4">
-            {purchaseList.map((item, index) => (
-              <li
-                key={index}
-                className="flex justify-between bg-brown-200 p-4 mb-2 rounded-lg shadow-sm hover:bg-brown-300 text-center font-retro text-white"
-              >
-                <span>
-                  {item.product_name} x{item.quantity}
-                </span>
-                <span>{item.product_price}円</span>
-                <span>{item.total}円</span>
-              </li>
-            ))}
-          </ul>
-          {purchaseList.length > 0 && (
-            <Button
-              className={`w-full ${buttonVariants({
-                variant: "outline",
-              })} px-6 py-3 text-lg rounded-lg bg-green-600 text-white shadow-md hover:bg-green-500`}
-              onClick={handlePurchase}
-            >
-              購入
-            </Button>
-          )}
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            {/* ヘッダー行 */}
+            <div className="grid grid-cols-4 gap-2 bg-orange-900 text-white p-3 text-sm font-bold">
+              <div className="text-left">商品名</div>
+              <div className="text-right">単価</div>
+              <div className="text-center">数量</div>
+              <div className="text-right">小計</div>
+            </div>
+
+            {/* 商品リスト */}
+            <div className="max-h-[300px] overflow-auto">
+              {purchaseList.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                  商品がありません
+                </div>
+              ) : (
+                <div className="divide-y divide-gray-200">
+                  {purchaseList.map((item, index) => (
+                    <div
+                      key={index}
+                      className="grid grid-cols-4 gap-2 p-3 items-center hover:bg-orange-50"
+                    >
+                      <div className="font-medium text-orange-900 truncate">
+                        {item.product_name}
+                      </div>
+                      <div className="text-right text-gray-600">
+                        ¥{item.product_price.toLocaleString()}
+                      </div>
+                      <div className="text-center text-gray-600">
+                        {item.quantity}
+                      </div>
+                      <div className="text-right font-bold text-orange-900">
+                        ¥{item.total.toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 合計金額表示 */}
+            {purchaseList.length > 0 && (
+              <div className="border-t border-gray-200">
+                <div className="p-4 bg-orange-50">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">小計</span>
+                    <span>
+                      ¥
+                      {purchaseList
+                        .reduce((sum, item) => sum + item.total, 0)
+                        .toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">消費税（10%）</span>
+                    <span>
+                      ¥
+                      {Math.floor(
+                        purchaseList.reduce(
+                          (sum, item) => sum + item.total,
+                          0
+                        ) * 0.1
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center text-orange-900 pt-2 border-t border-gray-200">
+                    <span className="font-bold">合計</span>
+                    <span className="text-xl font-bold">
+                      ¥
+                      {Math.floor(
+                        purchaseList.reduce(
+                          (sum, item) => sum + item.total,
+                          0
+                        ) * 1.1
+                      ).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-4">
+                  <Button
+                    className={`w-full ${buttonVariants({
+                      variant: "outline",
+                    })} px-6 py-3 text-lg rounded-lg bg-green-600 text-white shadow-md hover:bg-green-500`}
+                    onClick={handlePurchase}
+                  >
+                    購入する
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
